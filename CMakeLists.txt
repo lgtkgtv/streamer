@@ -3,11 +3,14 @@ project(mjpeg_server)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# set(CMAKE_CXX_FLAGS "-std=c++11 -Wall   -g    -pedantic ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11  -g    -pedantic ${CMAKE_CXX_FLAGS}")
 
 find_package(Boost COMPONENTS
   thread
   system
   regex
+  filesystem
   REQUIRED
   )
 
@@ -15,13 +18,32 @@ if (Boost_FOUND)
   message(STATUS "Boost headers at ${Boost_INCLUDE_DIRS}")
   message(STATUS "Boost libraries at ${Boost_LIBRARIES}")
 endif()
+
+
+if(Boost_FOUND)
+   MESSAGE( STATUS "Boost_VERSION = "        "${Boost_VERSION}" )
+   MESSAGE( STATUS "Boost_LIB_VERSION = "    "${Boost_LIB_VERSION}" )
+   MESSAGE( STATUS "Boost_INCLUDE_DIRS = "   "${Boost_INCLUDE_DIRS}" )
+   MESSAGE( STATUS "Boost_LIBRARY_DIRS = "   "${Boost_LIBRARY_DIRS}" )
+   MESSAGE( STATUS "Boost_LIBRARIES = "      "${Boost_LIBRARIES}" )
+else(Boost_FOUND)
+   MESSAGE( FATAL_ERROR     "Boost NOT FOUND" ) 
+endif(Boost_FOUND)
+
+
 add_subdirectory(json_spirit)
+
+
+
 
 find_package(OpenCV REQUIRED)
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
   )
+
+
+
 
 add_library(ecto_streamer_serv SHARED
   connection.cpp
@@ -34,21 +56,27 @@ add_library(ecto_streamer_serv SHARED
   )
 
 target_link_libraries(ecto_streamer_serv
-  ${OpenCV_LIBS}
-  boost_thread boost_system boost_regex
+  ${OpenCV_LIBS} 
+  ${Boost_LIBRARIES} 
+  pthread   
   )
 
 set_target_properties(ecto_streamer_serv PROPERTIES
-    COMPILE_FLAGS "-fpic -Wall -Werror"
+    # COMPILE_FLAGS "-fpic -Wall -Werror"
+    COMPILE_FLAGS "-fpic -Wno-narrowing"
     )
 
 add_executable(httpserv  main.cpp)
+
 target_link_libraries(httpserv
-  ecto_streamer_serv
+  ecto_streamer_serv 
+  ${Boost_LIBRARIES} 
+  pthread   
   )
 
 set_target_properties(httpserv PROPERTIES
-    COMPILE_FLAGS "-fpic -Wall -Werror"
+    # COMPILE_FLAGS "-fpic -Wall -Werror"
+    COMPILE_FLAGS "-fpic -Wno-narrowing"
     )
 
 install(TARGETS ecto_streamer_serv
@@ -72,3 +100,4 @@ if(ecto_FOUND)
     install_ecto_module(mjpeg_server)
 endif()
   
+
